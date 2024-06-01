@@ -16,7 +16,7 @@ public class Application {
                 .reference(referenceConfig);
 
         HelloService service = referenceConfig.getReference();
-        String message = service.sayHello("dubbo");
+        String message = service.sayHello("sung");
         System.out.println("Receive result ======> " + message);
 
 

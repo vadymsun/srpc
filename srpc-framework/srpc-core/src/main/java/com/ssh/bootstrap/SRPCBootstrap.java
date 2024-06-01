@@ -2,28 +2,23 @@ package com.ssh.bootstrap;
 
 
 import com.ssh.network.handler.SrpcRequestMessageHandler;
-import com.ssh.network.handler.SrpcResponseMessageHandler;
-import com.ssh.network.message.SrpcRequestMessage;
 import com.ssh.network.protocol.SrpcMessageCodec;
+import com.ssh.proxy.handler.SrpcConsumerInvocationHandler;
 import com.ssh.registry.Registry;
-import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.util.concurrent.DefaultPromise;
 import lombok.extern.slf4j.Slf4j;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
+
 import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -45,7 +40,9 @@ public class SRPCBootstrap {
 
 
     // 客户端维护的 服务地址和channel的映射
-    private static final Map<String, Channel> channels = new ConcurrentHashMap<>();
+    public static final Map<String, Channel> channels = new ConcurrentHashMap<>();
+
+    public static final Map<Long, CompletableFuture<Object>> waitingCalls = new ConcurrentHashMap<>();
 
     private SRPCBootstrap(){
 
@@ -139,69 +136,16 @@ public class SRPCBootstrap {
 
     /**
      * 调用者获取目标接口的代理类
+     *
      * @param referenceConfig
-     * @return
      */
-    public SRPCBootstrap reference(ReferenceConfig<?> referenceConfig) {
-
+    public void reference(ReferenceConfig<?> referenceConfig) {
         ClassLoader classLoader = referenceConfig.getInterfaceConsumed().getClassLoader();
         Class<?>[] interfaces = new Class[]{referenceConfig.getInterfaceConsumed()};
-
-        Object reference = Proxy.newProxyInstance(classLoader, interfaces, new InvocationHandler() {
-            @Override
-            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                // 1. 发现服务：从注册中心用负责均衡算法选择一个服务
-                String serverHost = registry.discover(referenceConfig.getInterfaceConsumed().getName());
-                if (serverHost == "") {
-                    throw new RuntimeException();
-                }
-                String ip = serverHost.split(":")[0];
-                int port = Integer.valueOf(serverHost.split(":")[1]);
-                System.out.println("connect" + ip + port);
-                // 2。获取netty连接
-                Channel channel;
-                if(!serverMap.containsKey(serverHost)){
-                    NioEventLoopGroup group = new NioEventLoopGroup();
-                    ChannelFuture channelFuture = new Bootstrap()
-                            .group(group)
-                            .channel(NioSocketChannel.class)
-                            .handler(new ChannelInitializer<Channel>() {
-
-                                @Override
-                                protected void initChannel(Channel channel) throws Exception {
-                                    channel.pipeline().addLast(new LengthFieldBasedFrameDecoder(
-                                            102400, 8,
-                                            4, 0, 0));
-                                    channel.pipeline().addLast(new LoggingHandler());
-                                    channel.pipeline().addLast(new SrpcMessageCodec());
-                                    channel.pipeline().addLast(new SrpcResponseMessageHandler());
-                                }
-                            }).connect(ip, port)
-                            .sync();
-                    Channel cur_channel = channelFuture.channel();
-                    channels.put(serverHost, cur_channel);
-
-                }
-                channel = channels.get(serverHost);
-                // 3. 封装并发送消息
-                SrpcRequestMessage srpcRequestMessage = new SrpcRequestMessage(referenceConfig.getInterfaceConsumed().getName(),
-                        method.getName(),
-                        method.getParameterTypes(),
-                        args,
-                        method.getReturnType());
-                channel.writeAndFlush(srpcRequestMessage);
-                DefaultPromise<Object> promise = new DefaultPromise<>(channel.eventLoop());
-                SrpcResponseMessageHandler.PROMISES.put(1, promise);
-
-
-                // 4。等待promise结束
-                promise.await();
-
-                return null;
-            }
-        });
+        SrpcConsumerInvocationHandler srpcConsumerInvocationHandler = new SrpcConsumerInvocationHandler(registry, referenceConfig);
+        // 生成目标接口的代理类
+        Object reference = Proxy.newProxyInstance(classLoader, interfaces, srpcConsumerInvocationHandler);
         referenceConfig.setReference(reference);
 
-        return srpcBootstrap;
     }
 }

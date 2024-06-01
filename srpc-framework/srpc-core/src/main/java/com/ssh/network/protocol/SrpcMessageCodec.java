@@ -3,6 +3,7 @@ package com.ssh.network.protocol;
 import com.ssh.network.message.Message;
 import com.ssh.network.message.SrpcRequestMessage;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
 
@@ -42,6 +43,7 @@ public class SrpcMessageCodec extends ByteToMessageCodec<Message> {
 
     @Override
     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
+        // todo 检查magicNum
         int magicNum = byteBuf.readInt();
 
         byte version = byteBuf.readByte();
