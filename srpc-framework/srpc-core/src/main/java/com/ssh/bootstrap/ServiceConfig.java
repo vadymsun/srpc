@@ -1,5 +1,9 @@
 package com.ssh.bootstrap;
 
+/**
+ *
+ * @param <T>
+ */
 public class ServiceConfig <T>{
 
     private Class<T> interfaceProvider;

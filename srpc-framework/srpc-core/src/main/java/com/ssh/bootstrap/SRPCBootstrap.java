@@ -1,15 +1,24 @@
 package com.ssh.bootstrap;
 
 
+import com.ssh.network.handler.SrpcRequestMessageHandler;
+import com.ssh.network.handler.SrpcResponseMessageHandler;
+import com.ssh.network.message.SrpcRequestMessage;
+import com.ssh.network.protocol.SrpcMessageCodec;
 import com.ssh.registry.Registry;
-import com.ssh.registry.ZookeeperRegistry;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.logging.LoggingHandler;
+import io.netty.util.concurrent.DefaultPromise;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.ZooKeeper;
-
-import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -30,7 +39,13 @@ public class SRPCBootstrap {
 
     private Registry registry;
 
-    private static Map<String, ServiceConfig<?>> serverMap = new ConcurrentHashMap<>();
+
+    // 服务端本地维护的 全类名与对象之间的映射
+    public static final Map<String, ServiceConfig<?>> serverMap = new ConcurrentHashMap<>();
+
+
+    // 客户端维护的 服务地址和channel的映射
+    private static final Map<String, Channel> channels = new ConcurrentHashMap<>();
 
     private SRPCBootstrap(){
 
@@ -91,6 +106,34 @@ public class SRPCBootstrap {
      * 启动netty 等待服务调用方的请求
      */
     public void start() {
+        // 启动netty服务
+        NioEventLoopGroup boss = new NioEventLoopGroup();
+        NioEventLoopGroup workers = new NioEventLoopGroup(10);
+        ServerBootstrap serverBootstrap = new ServerBootstrap()
+                .group(boss, workers)
+                .channel(NioServerSocketChannel.class)
+                .childHandler(new ChannelInitializer<SocketChannel>() {
+
+                    @Override
+                    protected void initChannel(SocketChannel socketChannel) throws Exception {
+                        socketChannel.pipeline().addLast(new LengthFieldBasedFrameDecoder(102400, 8, 4, 0, 0));
+                        socketChannel.pipeline().addLast(new LoggingHandler());
+                        socketChannel.pipeline().addLast(new SrpcMessageCodec());
+                        socketChannel.pipeline().addLast(new SrpcRequestMessageHandler());
+                    }
+
+                });
+
+        try {
+            Channel channel = serverBootstrap.bind(8081).sync().channel();
+            channel.closeFuture().sync();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }finally {
+            boss.shutdownGracefully();
+            workers.shutdownGracefully();
+        }
+
 
     }
 
@@ -115,8 +158,44 @@ public class SRPCBootstrap {
                 String ip = serverHost.split(":")[0];
                 int port = Integer.valueOf(serverHost.split(":")[1]);
                 System.out.println("connect" + ip + port);
-                // 2。用netty与该服务建立连接，获取结果
+                // 2。获取netty连接
+                Channel channel;
+                if(!serverMap.containsKey(serverHost)){
+                    NioEventLoopGroup group = new NioEventLoopGroup();
+                    ChannelFuture channelFuture = new Bootstrap()
+                            .group(group)
+                            .channel(NioSocketChannel.class)
+                            .handler(new ChannelInitializer<Channel>() {
 
+                                @Override
+                                protected void initChannel(Channel channel) throws Exception {
+                                    channel.pipeline().addLast(new LengthFieldBasedFrameDecoder(
+                                            102400, 8,
+                                            4, 0, 0));
+                                    channel.pipeline().addLast(new LoggingHandler());
+                                    channel.pipeline().addLast(new SrpcMessageCodec());
+                                    channel.pipeline().addLast(new SrpcResponseMessageHandler());
+                                }
+                            }).connect(ip, port)
+                            .sync();
+                    Channel cur_channel = channelFuture.channel();
+                    channels.put(serverHost, cur_channel);
+
+                }
+                channel = channels.get(serverHost);
+                // 3. 封装并发送消息
+                SrpcRequestMessage srpcRequestMessage = new SrpcRequestMessage(referenceConfig.getInterfaceConsumed().getName(),
+                        method.getName(),
+                        method.getParameterTypes(),
+                        args,
+                        method.getReturnType());
+                channel.writeAndFlush(srpcRequestMessage);
+                DefaultPromise<Object> promise = new DefaultPromise<>(channel.eventLoop());
+                SrpcResponseMessageHandler.PROMISES.put(1, promise);
+
+
+                // 4。等待promise结束
+                promise.await();
 
                 return null;
             }

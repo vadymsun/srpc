@@ -48,16 +48,14 @@ public class ZookeeperRegistry extends AbstractRegistry{
                         CreateMode.PERSISTENT);
             }
             // 把当前服务的名作为临时节点加入到service下
-            String node = parentNode + "/" + "127.0.0.1:8080";
+            String node = parentNode + "/" + "127.0.0.1:8081";
             if(zooKeeper.exists(node, null) == null){
                 zooKeeper.create(node,
                         "".getBytes(),
                         ZooDefs.Ids.OPEN_ACL_UNSAFE,
-                        CreateMode.PERSISTENT);
+                        CreateMode.EPHEMERAL);
             }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } catch (KeeperException e) {
+        } catch (InterruptedException | KeeperException e) {
             throw new RuntimeException(e);
         }
     }
