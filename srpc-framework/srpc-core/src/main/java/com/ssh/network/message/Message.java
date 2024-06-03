@@ -9,4 +9,14 @@ public abstract class Message implements Serializable {
 
     public abstract int getMessageType();
 
+    private long requestId;
+
+
+    public long getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(long requestId) {
+        this.requestId = requestId;
+    }
 }

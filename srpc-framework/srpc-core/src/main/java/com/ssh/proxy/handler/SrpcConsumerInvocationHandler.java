@@ -38,17 +38,19 @@ public class SrpcConsumerInvocationHandler implements InvocationHandler {
         Channel channel = getChannel(serverHost);
 
         // 3. 封装rpc请求消息，并发送给服务方
+        long requestId = RequestIdGenerator.getRequestId();
         SrpcRequestMessage srpcRequestMessage = new SrpcRequestMessage(
                 referenceConfig.getInterfaceConsumed().getName(),
                 method.getName(),
                 method.getParameterTypes(),
                 args,
                 method.getReturnType());
+        srpcRequestMessage.setRequestId(requestId);
         ChannelFuture channelFuture = channel.writeAndFlush(srpcRequestMessage);
 
         // 4 挂起调用请求，阻塞当前线程最多10秒等待服务方发送结果
         CompletableFuture<Object> completableFuture = new CompletableFuture<>();
-        SRPCBootstrap.waitingCalls.put(1L, completableFuture);
+        SRPCBootstrap.waitingCalls.put(requestId, completableFuture);
 
         return completableFuture.get(10, TimeUnit.SECONDS);
     }

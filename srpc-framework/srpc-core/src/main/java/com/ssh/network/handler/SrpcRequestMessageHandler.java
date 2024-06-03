@@ -23,10 +23,12 @@ public class SrpcRequestMessageHandler extends SimpleChannelInboundHandler<SrpcR
                     srpcRequestMessage.getArgTypes());
             Object result = method.invoke(serviceConfig.getReference(), srpcRequestMessage.getArgs());
             SrpcResponseMessage responseMessage = new SrpcResponseMessage(ResponseState.SUCCESS, result);
+            responseMessage.setRequestId(srpcRequestMessage.getRequestId());
             log.debug("{}", responseMessage);
             channelHandlerContext.writeAndFlush(responseMessage);
         }catch (Exception e){
             SrpcResponseMessage responseMessage = new SrpcResponseMessage(ResponseState.FAILED, e);
+            responseMessage.setRequestId(srpcRequestMessage.getRequestId());
             log.debug("{}", responseMessage);
             channelHandlerContext.writeAndFlush(responseMessage);
         }

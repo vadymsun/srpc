@@ -16,8 +16,11 @@ public class Application {
                 .reference(referenceConfig);
 
         HelloService service = referenceConfig.getReference();
-        String message = service.sayHello("sung");
-        System.out.println("Receive result ======> " + message);
+        for (int i = 0; i < 10; i++) {
+            String message = service.sayHello("sung"+"序号"+i);
+            System.out.println("Receive result ======> " + message);
+
+        }
 
 
     }

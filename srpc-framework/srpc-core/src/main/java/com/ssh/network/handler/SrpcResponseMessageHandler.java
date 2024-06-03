@@ -20,7 +20,9 @@ public class SrpcResponseMessageHandler extends SimpleChannelInboundHandler<Srpc
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, SrpcResponseMessage srpcResponseMessage) throws Exception {
         log.debug("{}",srpcResponseMessage);
-        CompletableFuture<Object> completableFuture = SRPCBootstrap.waitingCalls.remove(1L);
+        log.debug("{}",srpcResponseMessage.getRequestId());
+
+        CompletableFuture<Object> completableFuture = SRPCBootstrap.waitingCalls.remove(srpcResponseMessage.getRequestId());
         if(srpcResponseMessage.getState().equals(ResponseState.SUCCESS.getState())){
             completableFuture.complete(srpcResponseMessage.getReturnValue());
         }else {
