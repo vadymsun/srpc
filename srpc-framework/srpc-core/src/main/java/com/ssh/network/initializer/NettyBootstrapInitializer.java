@@ -1,7 +1,7 @@
 package com.ssh.network.initializer;
 
-import com.ssh.network.handler.SrpcRequestMessageHandler;
 import com.ssh.network.handler.SrpcResponseMessageHandler;
+import com.ssh.network.protocol.SrpcFrameDecoder;
 import com.ssh.network.protocol.SrpcMessageCodec;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelInitializer;
@@ -26,7 +26,7 @@ public class NettyBootstrapInitializer {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         // todo 配置@sharable，避免每次创建channel的时候都new新的上下文无关的handler
-                        socketChannel.pipeline().addLast(new LengthFieldBasedFrameDecoder(102400, 8, 4, 0, 0));
+                        socketChannel.pipeline().addLast(new SrpcFrameDecoder());
                         socketChannel.pipeline().addLast(new LoggingHandler());
                         socketChannel.pipeline().addLast(new SrpcMessageCodec());
                         socketChannel.pipeline().addLast(new SrpcResponseMessageHandler());

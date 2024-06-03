@@ -8,11 +8,20 @@ import lombok.Setter;
 @Setter
 @Getter
 public class SrpcResponseMessage extends Message {
-    private int SequenceId;
 
     private String message;
 
     private Object returnValue;
+
+    private Integer state;
+
+
+    public SrpcResponseMessage(ResponseState responseState, Object returnValue){
+        this.message = responseState.getMsg();
+        this.state = responseState.getState();
+        this.returnValue = returnValue;
+    }
+
 
     @Override
     public int getMessageType() {

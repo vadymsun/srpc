@@ -2,6 +2,7 @@ package com.ssh.bootstrap;
 
 
 import com.ssh.network.handler.SrpcRequestMessageHandler;
+import com.ssh.network.protocol.SrpcFrameDecoder;
 import com.ssh.network.protocol.SrpcMessageCodec;
 import com.ssh.proxy.handler.SrpcConsumerInvocationHandler;
 import com.ssh.registry.Registry;
@@ -113,7 +114,7 @@ public class SRPCBootstrap {
 
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
-                        socketChannel.pipeline().addLast(new LengthFieldBasedFrameDecoder(102400, 8, 4, 0, 0));
+                        socketChannel.pipeline().addLast(new SrpcFrameDecoder());
                         socketChannel.pipeline().addLast(new LoggingHandler());
                         socketChannel.pipeline().addLast(new SrpcMessageCodec());
                         socketChannel.pipeline().addLast(new SrpcRequestMessageHandler());
