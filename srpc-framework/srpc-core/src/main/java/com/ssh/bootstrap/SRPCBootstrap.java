@@ -4,6 +4,8 @@ package com.ssh.bootstrap;
 import com.ssh.network.handler.SrpcRequestMessageHandler;
 import com.ssh.network.protocol.SrpcFrameDecoder;
 import com.ssh.network.protocol.SrpcMessageCodec;
+import com.ssh.network.serialize.Serializer;
+import com.ssh.network.serialize.SerializerFactory;
 import com.ssh.proxy.handler.SrpcConsumerInvocationHandler;
 import com.ssh.registry.Registry;
 import io.netty.bootstrap.ServerBootstrap;
@@ -14,6 +16,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.logging.LoggingHandler;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Proxy;
@@ -34,6 +37,9 @@ public class SRPCBootstrap {
     private ProtocolConfig protocolConfig;
 
     private Registry registry;
+
+    @Getter
+    private int serializerType = SerializerFactory.JDK_SERIALIZER;
 
 
     // 服务端本地维护的 全类名与对象之间的映射
@@ -62,7 +68,10 @@ public class SRPCBootstrap {
         this.appName = appName;
         return srpcBootstrap;
     }
-
+    public SRPCBootstrap serialize(int serializerType) {
+        this.serializerType = serializerType;
+        return srpcBootstrap;
+    }
 
     /**
      * j连接zookeeper
@@ -149,4 +158,8 @@ public class SRPCBootstrap {
         referenceConfig.setReference(reference);
 
     }
+
+
+
+
 }

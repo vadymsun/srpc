@@ -3,9 +3,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
-@AllArgsConstructor
 @Setter
 @Getter
+@AllArgsConstructor
 public class SrpcRequestMessage extends Message {
 
     // 接口的全限定名

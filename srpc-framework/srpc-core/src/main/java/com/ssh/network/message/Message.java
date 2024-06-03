@@ -1,5 +1,8 @@
 package com.ssh.network.message;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.Serializable;
 
 public abstract class Message implements Serializable {
@@ -9,14 +12,11 @@ public abstract class Message implements Serializable {
 
     public abstract int getMessageType();
 
+    @Getter
+    @Setter
     private long requestId;
 
 
-    public long getRequestId() {
-        return requestId;
-    }
 
-    public void setRequestId(long requestId) {
-        this.requestId = requestId;
-    }
+
 }

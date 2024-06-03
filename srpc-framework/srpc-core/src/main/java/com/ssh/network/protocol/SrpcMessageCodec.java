@@ -1,8 +1,10 @@
 package com.ssh.network.protocol;
 
 import com.ssh.Constants;
+import com.ssh.bootstrap.SRPCBootstrap;
 import com.ssh.exceptions.NetworkException;
 import com.ssh.network.message.Message;
+import com.ssh.network.serialize.SerializerFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageCodec;
@@ -22,7 +24,8 @@ public class SrpcMessageCodec extends ByteToMessageCodec<Message> {
         byteBuf.writeByte(ProtocolContent.VERSION);
 
         // 序列化方式
-        byteBuf.writeByte(ProtocolContent.JDK_SERIALIZE);
+        int serializerType = SRPCBootstrap.getInstance().getSerializerType();
+        byteBuf.writeByte(serializerType);
 
         // 消息类型
         byteBuf.writeByte(message.getMessageType());
@@ -31,7 +34,7 @@ public class SrpcMessageCodec extends ByteToMessageCodec<Message> {
         byteBuf.writeByte(1);
 
         // 序列化
-        byte[] bytes = messageToByteArray(message);
+        byte[] bytes = SerializerFactory.getSerializer(serializerType).serialize(message);
         byteBuf.writeInt(bytes.length);
         byteBuf.writeBytes(bytes);
     }
@@ -64,44 +67,11 @@ public class SrpcMessageCodec extends ByteToMessageCodec<Message> {
         byteBuf.readBytes(bytes, 0, length);
 
         // 反序列化
-        Message message = byteArrayToMessage(bytes);
+        Message message = SerializerFactory.getSerializer(serializeType).deserialize(bytes, Message.class);
         list.add(message);
     }
 
 
-
-    /**
-     * 将对象序列化
-     * @param message
-     * @return
-     */
-    private byte[] messageToByteArray(Message message){
-        // todo 提供多种序列化方案
-        try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ObjectOutputStream oos = new ObjectOutputStream(bos);
-            oos.writeObject(message);
-            return bos.toByteArray();
-        } catch (IOException e) {
-            log.error("序列化失败！");
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * 反序列化消息实体
-     * @param bytes
-     * @return
-     */
-    private Message byteArrayToMessage(byte[] bytes){
-        try {
-            ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bytes));
-            return (Message) ois.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            log.error("反序列化失败！");
-            throw new RuntimeException(e);
-        }
-    }
 
     private boolean checkMagicNum(byte[] magicNum) {
         for (int i = 0; i < 4; i++) {

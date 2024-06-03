@@ -1,5 +1,6 @@
 package com.ssh.network.message;
 
+import com.ssh.bootstrap.SRPCBootstrap;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -17,6 +18,7 @@ public class SrpcResponseMessage extends Message {
 
 
     public SrpcResponseMessage(ResponseState responseState, Object returnValue){
+        super();
         this.message = responseState.getMsg();
         this.state = responseState.getState();
         this.returnValue = returnValue;
