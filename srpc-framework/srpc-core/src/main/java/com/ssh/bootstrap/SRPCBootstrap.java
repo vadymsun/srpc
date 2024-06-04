@@ -1,6 +1,8 @@
 package com.ssh.bootstrap;
 
 
+import com.ssh.loadbalance.LoadBalancer;
+import com.ssh.loadbalance.RoundLoadBalancer;
 import com.ssh.network.handler.SrpcRequestMessageHandler;
 import com.ssh.network.protocol.SrpcFrameDecoder;
 import com.ssh.network.protocol.SrpcMessageCodec;
@@ -27,6 +29,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 public class SRPCBootstrap {
+    public static int PORT = 8083;
+    public static String CUR_IP = "127.0.0.1";
+
     // 单例模式 每个服务只允许拥有一个启动器实例
     public static SRPCBootstrap srpcBootstrap = new SRPCBootstrap();
 
@@ -37,6 +42,9 @@ public class SRPCBootstrap {
     private ProtocolConfig protocolConfig;
 
     private Registry registry;
+
+    @Getter
+    private LoadBalancer loadBalancer;
 
     @Getter
     private int serializerType = SerializerFactory.JDK_SERIALIZER;
@@ -80,6 +88,7 @@ public class SRPCBootstrap {
      */
     public SRPCBootstrap registry(RegistryConfig registryConfig) {
         this.registry = registryConfig.getRegistry();
+        loadBalancer = new RoundLoadBalancer(registry);
         return srpcBootstrap;
     }
 
@@ -132,7 +141,7 @@ public class SRPCBootstrap {
                 });
 
         try {
-            Channel channel = serverBootstrap.bind(8081).sync().channel();
+            Channel channel = serverBootstrap.bind(PORT).sync().channel();
             channel.closeFuture().sync();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

@@ -1,6 +1,7 @@
 package com.ssh.registry;
 
 import com.ssh.Constants;
+import com.ssh.bootstrap.SRPCBootstrap;
 import com.ssh.bootstrap.ServiceConfig;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -9,6 +10,8 @@ import org.apache.zookeeper.ZooKeeper;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ZookeeperRegistry extends AbstractRegistry{
 
@@ -47,8 +50,9 @@ public class ZookeeperRegistry extends AbstractRegistry{
                         ZooDefs.Ids.OPEN_ACL_UNSAFE,
                         CreateMode.PERSISTENT);
             }
-            // 把当前服务的名作为临时节点加入到service下
-            String node = parentNode + "/" + "127.0.0.1:8081";
+            // todo 读取当前服务的ip和端口号
+            //  把当前服务的名作为临时节点加入到service下
+            String node = parentNode + "/" + SRPCBootstrap.CUR_IP+":"+ SRPCBootstrap.PORT;
             if(zooKeeper.exists(node, null) == null){
                 zooKeeper.create(node,
                         "".getBytes(),
@@ -66,20 +70,13 @@ public class ZookeeperRegistry extends AbstractRegistry{
      * @return
      */
     @Override
-    public String discover(String interfaceName) {
+    public List<String> discover(String interfaceName) {
         try {
-            List<String> children = zooKeeper.getChildren(Constants.BASE_PROVIDER_PATH+"/"+interfaceName, null);
-            if(children.isEmpty()){
-                return "";
-            }
+            // 获取服务列表 优先从缓存中获取
 
-            // TODO 负载均衡算法选择一个服务
-            return children.get(0);
+            return zooKeeper.getChildren(Constants.BASE_PROVIDER_PATH+"/"+interfaceName, null);
 
-
-        } catch (KeeperException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
+        } catch (KeeperException | InterruptedException e) {
             throw new RuntimeException(e);
         }
 

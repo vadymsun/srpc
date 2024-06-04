@@ -11,7 +11,7 @@ public interface Registry {
      * 服务发布到注册中心
      * @param serviceConfig
      */
-    public void publish(ServiceConfig serviceConfig);
+     void publish(ServiceConfig serviceConfig);
 
 
     /**
@@ -19,6 +19,6 @@ public interface Registry {
      * @param interfaceName : 接口的全限定名
      * @return
      */
-    public String discover(String interfaceName);
+     List<String> discover(String interfaceName);
 
 }
