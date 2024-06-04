@@ -1,32 +1,22 @@
-package com.ssh.loadbalance;
+package com.ssh.loadbalance.imp;
 
+import com.ssh.bootstrap.SRPCBootstrap;
 import com.ssh.exceptions.RegistryDiscoveryException;
-import com.ssh.registry.Registry;
-
+import com.ssh.loadbalance.AbstractLoadBalancer;
+import com.ssh.loadbalance.Selector;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 每个服务只有一个loadBalancer实例
  */
-public class RoundLoadBalancer implements LoadBalancer{
+public class RoundLoadBalancer extends AbstractLoadBalancer {
 
-    private Registry registry;
-    private Map<String, Selector> selectorMap = new ConcurrentHashMap<>();
-
-    public RoundLoadBalancer(Registry registry){
-        this.registry = registry;
-    }
     @Override
-    public String getServerHost(String interfaceName) {
-        if(!selectorMap.containsKey(interfaceName)){
-            selectorMap.put(interfaceName,new RoundSelector(registry.discover(interfaceName)));
-        }
-        Selector selector = selectorMap.get(interfaceName);
-        return selector.getNext();
+    public Selector getSelector(String interfaceName) {
+        return new RoundSelector(SRPCBootstrap.getInstance().getRegistry().discover(interfaceName));
     }
+
 
     public static class RoundSelector implements Selector{
 

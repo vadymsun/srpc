@@ -2,11 +2,11 @@ package com.ssh.bootstrap;
 
 
 import com.ssh.loadbalance.LoadBalancer;
-import com.ssh.loadbalance.RoundLoadBalancer;
+import com.ssh.loadbalance.imp.RandomLoadBalancer;
+import com.ssh.loadbalance.imp.RoundLoadBalancer;
 import com.ssh.network.handler.SrpcRequestMessageHandler;
 import com.ssh.network.protocol.SrpcFrameDecoder;
 import com.ssh.network.protocol.SrpcMessageCodec;
-import com.ssh.network.serialize.Serializer;
 import com.ssh.network.serialize.SerializerFactory;
 import com.ssh.proxy.handler.SrpcConsumerInvocationHandler;
 import com.ssh.registry.Registry;
@@ -16,7 +16,6 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.logging.LoggingHandler;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +40,7 @@ public class SRPCBootstrap {
 
     private ProtocolConfig protocolConfig;
 
+    @Getter
     private Registry registry;
 
     @Getter
@@ -88,7 +88,7 @@ public class SRPCBootstrap {
      */
     public SRPCBootstrap registry(RegistryConfig registryConfig) {
         this.registry = registryConfig.getRegistry();
-        loadBalancer = new RoundLoadBalancer(registry);
+        loadBalancer = new RandomLoadBalancer();
         return srpcBootstrap;
     }
 
