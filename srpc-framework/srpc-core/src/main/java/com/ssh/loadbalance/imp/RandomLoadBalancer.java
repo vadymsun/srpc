@@ -10,9 +10,11 @@ import java.util.Random;
 
 public class RandomLoadBalancer extends AbstractLoadBalancer {
     @Override
-    public Selector getSelector(String interfaceName) {
+    public Selector getNewSelector(String interfaceName) {
         return new RandomSelector(SRPCBootstrap.getInstance().getRegistry().discover(interfaceName));
     }
+
+
 
     public static class RandomSelector implements Selector{
 

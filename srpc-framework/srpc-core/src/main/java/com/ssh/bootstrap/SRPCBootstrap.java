@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 public class SRPCBootstrap {
-    public static int PORT = 8083;
+    public static int PORT = 8081;
     public static String CUR_IP = "127.0.0.1";
 
     // 单例模式 每个服务只允许拥有一个启动器实例
@@ -88,7 +88,7 @@ public class SRPCBootstrap {
      */
     public SRPCBootstrap registry(RegistryConfig registryConfig) {
         this.registry = registryConfig.getRegistry();
-        loadBalancer = new RandomLoadBalancer();
+        loadBalancer = new RoundLoadBalancer();
         return srpcBootstrap;
     }
 

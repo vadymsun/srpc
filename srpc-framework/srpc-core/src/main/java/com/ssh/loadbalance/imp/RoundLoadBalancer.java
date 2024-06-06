@@ -13,9 +13,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RoundLoadBalancer extends AbstractLoadBalancer {
 
     @Override
-    public Selector getSelector(String interfaceName) {
+    public Selector getNewSelector(String interfaceName) {
         return new RoundSelector(SRPCBootstrap.getInstance().getRegistry().discover(interfaceName));
     }
+
+
 
 
     public static class RoundSelector implements Selector{

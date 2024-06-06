@@ -1,19 +1,22 @@
-package com.ssh.registry;
+package com.ssh.registry.imp;
 
 import com.ssh.Constants;
 import com.ssh.bootstrap.SRPCBootstrap;
 import com.ssh.bootstrap.ServiceConfig;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.ZooKeeper;
+import com.ssh.registry.AbstractRegistry;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.zookeeper.*;
 
 import java.io.IOException;
+import java.util.EventListener;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ZookeeperRegistry extends AbstractRegistry{
+@Slf4j
+public class ZookeeperRegistry extends AbstractRegistry {
 
 
     private ZooKeeper zooKeeper;
@@ -72,9 +75,28 @@ public class ZookeeperRegistry extends AbstractRegistry{
     @Override
     public List<String> discover(String interfaceName) {
         try {
+            String path = interfaceName;
+            if(interfaceName.length() < Constants.BASE_PROVIDER_PATH.length() ||
+                    !Constants.BASE_PROVIDER_PATH.equals(path.substring(0,Constants.BASE_PROVIDER_PATH.length()))){
+                path = Constants.BASE_PROVIDER_PATH + "/" + interfaceName;
+            }
+            log.debug("发现服务{}" , path);
             // 获取服务列表 优先从缓存中获取
+            return zooKeeper.getChildren(path, new Watcher() {
+                @Override
+                public void process(WatchedEvent watchedEvent) {
+                    if(watchedEvent.getType() == Event.EventType.NodeChildrenChanged){
+                        // 输出日志
+                        log.debug("检测到服务{}节点数量有变化！", watchedEvent.getPath());
 
-            return zooKeeper.getChildren(Constants.BASE_PROVIDER_PATH+"/"+interfaceName, null);
+                        // 获取负载均衡器 重新进行负载均衡
+                        String path = watchedEvent.getPath().substring(Constants.BASE_PROVIDER_PATH.length()+1);
+                        log.debug("接口名称{}", path);
+                        SRPCBootstrap.getInstance().getLoadBalancer().reLoadBalance(path);
+
+                    }
+                }
+            });
 
         } catch (KeeperException | InterruptedException e) {
             throw new RuntimeException(e);
