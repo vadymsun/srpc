@@ -15,7 +15,7 @@ public class SrpcRequestMessageHandler extends SimpleChannelInboundHandler<SrpcR
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, SrpcRequestMessage srpcRequestMessage) throws Exception {
         log.debug("{}", srpcRequestMessage);
-        ServiceConfig<?> serviceConfig = SRPCBootstrap.serverMap.get(srpcRequestMessage.getInterfaceName());
+        ServiceConfig serviceConfig = SRPCBootstrap.serverMap.get(srpcRequestMessage.getInterfaceName());
         // 利用反射获取方法
         try {
             Method method = serviceConfig.getReference().getClass().getMethod(

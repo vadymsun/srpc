@@ -12,9 +12,7 @@ public class Application {
 
 
         // 封装所有当前服务器向外提供的接口和对象
-        ServiceConfig<HelloService> service = new ServiceConfig<>();
-        service.setInterface(HelloService.class);
-        service.setRef(new HelloServiceImp());
+
 
         // 启动 Dubbo
         SRPCBootstrap.getInstance()
@@ -25,7 +23,6 @@ public class Application {
                 // 选择客户端和服务端通信的序列化算法
                 .protocol(new ProtocolConfig("dubbo"))
                 // 把本服务器提供的接口注册到注册中心
-                .service(service)
                 // 启动netty服务 等待客户端连接
                 .start();
 

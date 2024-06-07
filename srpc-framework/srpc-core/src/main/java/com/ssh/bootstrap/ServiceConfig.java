@@ -2,19 +2,18 @@ package com.ssh.bootstrap;
 
 /**
  *
- * @param <T>
  */
-public class ServiceConfig <T>{
+public class ServiceConfig {
 
-    private Class<T> interfaceProvider;
+    private Class<?> interfaceProvider;
 
-    private T reference;
+    private Object reference;
 
-    public void setInterface(Class<T> serviceClass) {
+    public void setInterface(Class<?> serviceClass) {
         interfaceProvider = serviceClass;
     }
 
-    public void setRef(T serviceImp) {
+    public void setRef(Object serviceImp) {
         reference = serviceImp;
     }
 
@@ -22,7 +21,7 @@ public class ServiceConfig <T>{
         return interfaceProvider.getName();
     }
 
-    public T getReference(){
+    public Object getReference(){
         return reference;
     }
 }

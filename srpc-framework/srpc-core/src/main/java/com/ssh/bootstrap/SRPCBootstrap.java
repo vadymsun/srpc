@@ -1,6 +1,7 @@
 package com.ssh.bootstrap;
 
 
+import com.ssh.anotation.SrpcService;
 import com.ssh.loadbalance.LoadBalancer;
 import com.ssh.loadbalance.imp.RandomLoadBalancer;
 import com.ssh.loadbalance.imp.RoundLoadBalancer;
@@ -20,7 +21,10 @@ import io.netty.handler.logging.LoggingHandler;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.File;
 import java.lang.reflect.Proxy;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -51,7 +55,7 @@ public class SRPCBootstrap {
 
 
     // 服务端本地维护的 全类名与对象之间的映射
-    public static final Map<String, ServiceConfig<?>> serverMap = new ConcurrentHashMap<>();
+    public static final Map<String, ServiceConfig> serverMap = new ConcurrentHashMap<>();
 
 
     // 客户端维护的 服务地址和channel的映射
@@ -107,21 +111,50 @@ public class SRPCBootstrap {
      * @param service
      * @return
      */
-    public SRPCBootstrap service(ServiceConfig<?> service) {
+    private SRPCBootstrap service(ServiceConfig service) {
         registry.publish(service);
         serverMap.put(service.getInterfaceName(), service);
         return srpcBootstrap;
     }
 
-    public SRPCBootstrap service(List<ServiceConfig<?>> services) {
-        return srpcBootstrap;
-    }
+
 
 
     /**
      * 启动netty 等待服务调用方的请求
      */
     public void start() {
+        // 扫描包，获取包下所有类文件的全限定名
+        String packageName = "com.ssh.Imp";
+        List<String> classNames = getAllClass(packageName);
+
+        // 实例化所有带有注解标记的类
+        List<Class<?>> classes = new ArrayList<>();
+        for (String className : classNames){
+            try {
+                Class<?> clazz = Class.forName(className);
+                if(clazz.getAnnotation(SrpcService.class) != null){
+                    classes.add(clazz);
+                }
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        // 发布
+        for (Class<?> clazz : classes){
+            // 获取该类实现的所有接口
+            Class<?>[] interfaces = clazz.getInterfaces();
+            // 发布
+            for (Class<?> anInterface : interfaces){
+                ServiceConfig serviceConfig = new ServiceConfig();
+                serviceConfig.setInterface(anInterface);
+                serviceConfig.setRef(clazz);
+                service(serviceConfig);
+                log.debug("成功发布服务{}", anInterface);
+            }
+        }
+
+
         // 启动netty服务
         NioEventLoopGroup boss = new NioEventLoopGroup();
         NioEventLoopGroup workers = new NioEventLoopGroup(10);
@@ -152,6 +185,52 @@ public class SRPCBootstrap {
 
 
     }
+
+
+    private List<String> getAllClass(String packageName) {
+
+        String basePath = packageName.replaceAll("\\.", "/");
+        URL url = ClassLoader.getSystemClassLoader().getResource(basePath);
+        System.out.println(url);
+        if(url == null){
+            throw new RuntimeException("配置的包路径不存在！");
+        }
+        String absolutePath = url.getPath();
+        System.out.println(absolutePath);
+        ArrayList<String> classNames = new ArrayList<>();
+        // 递归获取所有的类
+        recursionFile(absolutePath, classNames, basePath);
+        return classNames;
+
+    }
+
+    private void recursionFile(String absolutePath, ArrayList<String> classNames, String basePath) {
+        File file = new File(absolutePath);
+        if(file.isDirectory()){
+            File[] children = file.listFiles(pathname -> pathname.isDirectory() || pathname.getPath().contains(".class"));
+            if(children == null){
+                return;
+            }
+            for(File child : children){
+                recursionFile(child.getAbsolutePath(), classNames, basePath);
+            }
+        }else {
+            classNames.add(getClassNameByAbsolutePath(absolutePath, basePath));
+        }
+    }
+    private String getClassNameByAbsolutePath(String absolutePath,String basePath) {
+        // E:\project\ydlclass-yrpc\yrpc-framework\yrpc-core\target\classes\com\ydlclass\serialize\Serializer.class
+        // com\ydlclass\serialize\Serializer.class --> com.ydlclass.serialize.Serializer
+        String fileName = absolutePath
+                .substring(absolutePath.indexOf(basePath.replaceAll("/","\\\\")))
+                .replaceAll("\\\\",".");
+
+        fileName = fileName.substring(0,fileName.indexOf(".class"));
+        System.out.println(fileName);
+        return fileName;
+    }
+
+
 
     /**
      * 调用者获取目标接口的代理类
