@@ -1,7 +1,7 @@
 package com.ssh;
 
 import com.ssh.bootstrap.ReferenceConfig;
-import com.ssh.bootstrap.RegistryConfig;
+import com.ssh.registry.RegistryFactory;
 import com.ssh.bootstrap.SRPCBootstrap;
 import com.ssh.interfaces.HelloService;
 
@@ -12,7 +12,7 @@ public class Application {
 
         SRPCBootstrap.getInstance()
                 .application("first-dubbo-consumer")
-                .registry(new RegistryConfig("zookeeper://127.0.0.1:2181"))
+                .registry(new RegistryFactory("zookeeper://127.0.0.1:2181"))
                 .reference(referenceConfig);
 
         HelloService service = referenceConfig.getReference();

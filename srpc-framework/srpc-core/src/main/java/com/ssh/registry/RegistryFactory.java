@@ -1,14 +1,14 @@
-package com.ssh.bootstrap;
+package com.ssh.registry;
 
 import com.ssh.exceptions.RegistryDiscoveryException;
 import com.ssh.registry.Registry;
 import com.ssh.registry.imp.ZookeeperRegistry;
 
-public class RegistryConfig {
+public class RegistryFactory {
 
     private String connectString;
 
-    public RegistryConfig(String connectString){
+    public RegistryFactory(String connectString){
         this.connectString = connectString;
     }
 

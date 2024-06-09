@@ -4,12 +4,14 @@ import com.ssh.bootstrap.SRPCBootstrap;
 import com.ssh.exceptions.RegistryDiscoveryException;
 import com.ssh.loadbalance.AbstractLoadBalancer;
 import com.ssh.loadbalance.Selector;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * 每个服务只有一个loadBalancer实例
- */
+// 轮询负载均衡
+@Slf4j
 public class RoundLoadBalancer extends AbstractLoadBalancer {
 
     @Override
@@ -22,6 +24,7 @@ public class RoundLoadBalancer extends AbstractLoadBalancer {
 
     public static class RoundSelector implements Selector{
 
+        // 保存提供当前服务的机器的地址
         private List<String> serverList;
 
         private AtomicInteger index;
@@ -33,11 +36,10 @@ public class RoundLoadBalancer extends AbstractLoadBalancer {
         @Override
         public String getNext() {
             if(serverList.isEmpty()){
+                log.error("当前服务没有提供方！");
                 throw new RegistryDiscoveryException();
             }
-
             String res = serverList.get(index.getAndIncrement());
-
             if(index.get() == serverList.size()){
                 index.set(0);
             }

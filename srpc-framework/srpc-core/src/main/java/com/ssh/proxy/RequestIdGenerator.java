@@ -1,7 +1,6 @@
-package com.ssh.proxy.handler;
+package com.ssh.proxy;
 
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.LongAdder;
 
 public class RequestIdGenerator {
     public static AtomicLong id  =new AtomicLong(0L);

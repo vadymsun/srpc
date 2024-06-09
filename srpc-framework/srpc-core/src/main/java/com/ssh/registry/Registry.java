@@ -1,17 +1,14 @@
 package com.ssh.registry;
 
-import com.ssh.bootstrap.ServiceConfig;
-import org.apache.zookeeper.server.ServerConfig;
-
 import java.util.List;
 
 public interface Registry {
 
     /**
      * 服务发布到注册中心
-     * @param serviceConfig
+     * @param interfaceName
      */
-     void publish(ServiceConfig serviceConfig);
+     void publish(String interfaceName);
 
 
     /**

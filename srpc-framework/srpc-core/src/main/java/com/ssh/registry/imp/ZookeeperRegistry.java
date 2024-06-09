@@ -2,24 +2,18 @@ package com.ssh.registry.imp;
 
 import com.ssh.Constants;
 import com.ssh.bootstrap.SRPCBootstrap;
-import com.ssh.bootstrap.ServiceConfig;
 import com.ssh.registry.AbstractRegistry;
-import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
+import com.ssh.util.NetworkUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.*;
 
 import java.io.IOException;
-import java.util.EventListener;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+
 
 @Slf4j
 public class ZookeeperRegistry extends AbstractRegistry {
-
-
-    private ZooKeeper zooKeeper;
+    private final ZooKeeper zooKeeper;
 
     public ZookeeperRegistry(){
         String connect = "127.0.0.1:2181";
@@ -42,20 +36,19 @@ public class ZookeeperRegistry extends AbstractRegistry {
 
 
     @Override
-    public void publish(ServiceConfig service) {
+    public void publish(String interfaceName) {
         // 获取zookeeper连接
         try {
             // 如果service节点(接口的全限定名)不存在 则添加永久节点
-            String parentNode = Constants.BASE_PROVIDER_PATH + "/" + service.getInterfaceName();
+            String parentNode = Constants.BASE_PROVIDER_PATH + "/" + interfaceName;
             if(zooKeeper.exists(parentNode, null) == null){
                 zooKeeper.create(parentNode,
                         "".getBytes(),
                         ZooDefs.Ids.OPEN_ACL_UNSAFE,
                         CreateMode.PERSISTENT);
             }
-            // todo 读取当前服务的ip和端口号
             //  把当前服务的名作为临时节点加入到service下
-            String node = parentNode + "/" + SRPCBootstrap.CUR_IP+":"+ SRPCBootstrap.PORT;
+            String node = parentNode + "/" + NetworkUtil.getIP() +":"+ SRPCBootstrap.getInstance().getConfiguration().getPort();
             if(zooKeeper.exists(node, null) == null){
                 zooKeeper.create(node,
                         "".getBytes(),
@@ -88,16 +81,13 @@ public class ZookeeperRegistry extends AbstractRegistry {
                     if(watchedEvent.getType() == Event.EventType.NodeChildrenChanged){
                         // 输出日志
                         log.debug("检测到服务{}节点数量有变化！", watchedEvent.getPath());
-
                         // 获取负载均衡器 重新进行负载均衡
                         String path = watchedEvent.getPath().substring(Constants.BASE_PROVIDER_PATH.length()+1);
                         log.debug("接口名称{}", path);
                         SRPCBootstrap.getInstance().getLoadBalancer().reLoadBalance(path);
-
                     }
                 }
             });
-
         } catch (KeeperException | InterruptedException e) {
             throw new RuntimeException(e);
         }

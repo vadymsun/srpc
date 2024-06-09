@@ -24,7 +24,7 @@ public class SrpcMessageCodec extends ByteToMessageCodec<Message> {
         byteBuf.writeByte(ProtocolContent.VERSION);
 
         // 序列化方式
-        int serializerType = SRPCBootstrap.getInstance().getSerializerType();
+        int serializerType = SRPCBootstrap.getInstance().getConfiguration().getSerializerType();
         byteBuf.writeByte(serializerType);
 
         // 消息类型

@@ -5,6 +5,7 @@ import com.ssh.bootstrap.SRPCBootstrap;
 import com.ssh.exceptions.NetworkException;
 import com.ssh.network.initializer.NettyBootstrapInitializer;
 import com.ssh.network.message.SrpcRequestMessage;
+import com.ssh.proxy.RequestIdGenerator;
 import com.ssh.registry.Registry;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -50,7 +51,7 @@ public class SrpcConsumerInvocationHandler implements InvocationHandler {
 
         // 4 挂起调用请求，阻塞当前线程最多10秒等待服务方发送结果
         CompletableFuture<Object> completableFuture = new CompletableFuture<>();
-        SRPCBootstrap.waitingCalls.put(requestId, completableFuture);
+        SRPCBootstrap.WAITING_CALLS.put(requestId, completableFuture);
 
         return completableFuture.get(10, TimeUnit.SECONDS);
     }
@@ -62,15 +63,14 @@ public class SrpcConsumerInvocationHandler implements InvocationHandler {
      * @throws InterruptedException
      */
     private Channel getChannel(String serverHost) throws InterruptedException {
-        log.debug("当前channel数量："+ SRPCBootstrap.channels.size());
         String ip = serverHost.split(":")[0];
         int port = Integer.parseInt(serverHost.split(":")[1]);
-        if(!SRPCBootstrap.channels.containsKey(serverHost)){
+        if(!SRPCBootstrap.CHANNEL_CACHE.containsKey(serverHost)){
             log.debug("创建新channel");
             Channel channel = NettyBootstrapInitializer.getBootstrap().connect(ip,port).sync().channel();
-            SRPCBootstrap.channels.put(serverHost, channel);
+            SRPCBootstrap.CHANNEL_CACHE.put(serverHost, channel);
         }
-        Channel channel = SRPCBootstrap.channels.get(serverHost);
+        Channel channel = SRPCBootstrap.CHANNEL_CACHE.get(serverHost);
         if(channel == null){
             throw new NetworkException("客户端获取netty channel异常");
         }
