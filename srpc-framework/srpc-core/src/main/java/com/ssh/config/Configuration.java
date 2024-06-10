@@ -1,7 +1,7 @@
 package com.ssh.config;
 
 import com.ssh.network.serialize.SerializerFactory;
-import lombok.Data;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,7 +21,5 @@ public class Configuration {
     private String appName;
 
     // 序列化方式
-    private int serializerType = SerializerFactory.JDK_SERIALIZER;
-
-
+    private int serializerType = SerializerFactory.JSON_SERIALIZER;
 }

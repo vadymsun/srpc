@@ -31,8 +31,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class SRPCBootstrap {
 
-
-
     // 服务端本地维护的 全类名与对象之间的映射
     public static final Map<String, Object> SERVER_MAP = new ConcurrentHashMap<>();
 
@@ -89,21 +87,7 @@ public class SRPCBootstrap {
     }
     // =================================================================================================================
 
-
-    /**
-     * 注册服务 - 在zookeeper中创建节点
-     *
-     * @param service
-     */
-//    private void registService(ServiceConfig service) {
-//        registry.publish(service);
-//        SERVER_MAP.put(service.getInterfaceProvider().getName(), service);
-//    }
-
-
-    /**
-     * 启动netty 等待调用方的请求
-     */
+    //============================================== 服务方启动程序 =======================================================
     public void start() {
         // 扫描包，获取包下所有类文件的全限定名
         String packageName = configuration.getScanPath();
@@ -168,7 +152,7 @@ public class SRPCBootstrap {
         }
     }
 
-
+// =================================================================================================================
     /**
      * 调用者获取目标接口的代理类
      * @param referenceConfig

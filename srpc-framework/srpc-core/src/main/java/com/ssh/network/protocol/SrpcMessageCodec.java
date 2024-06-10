@@ -4,6 +4,8 @@ import com.ssh.Constants;
 import com.ssh.bootstrap.SRPCBootstrap;
 import com.ssh.exceptions.NetworkException;
 import com.ssh.network.message.Message;
+import com.ssh.network.message.SrpcRequestMessage;
+import com.ssh.network.message.SrpcResponseMessage;
 import com.ssh.network.serialize.SerializerFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -67,8 +69,14 @@ public class SrpcMessageCodec extends ByteToMessageCodec<Message> {
         byteBuf.readBytes(bytes, 0, length);
 
         // 反序列化
-        Message message = SerializerFactory.getSerializer(serializeType).deserialize(bytes, Message.class);
-        list.add(message);
+        if ((int)messageType == Message.RPC_REQUEST_MESSAGE){
+            SrpcRequestMessage message = SerializerFactory.getSerializer(serializeType).deserialize(bytes, SrpcRequestMessage.class);
+            list.add(message);
+        } else if ((int)messageType == Message.RPC_RESPONSE_MESSAGE) {
+            SrpcResponseMessage message = SerializerFactory.getSerializer(serializeType).deserialize(bytes, SrpcResponseMessage.class);
+            list.add(message);
+        }
+
     }
 
 

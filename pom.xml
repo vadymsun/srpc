@@ -30,11 +30,17 @@
         <fastjson2.version>2.0.26</fastjson2.version>
         <hession.version>4.0.65</hession.version>
         <fastjson2.version>2.0.21</fastjson2.version>
+        <kryo.version>4.0.2</kryo.version>
     </properties>
 
     <!-- 父工程版本管理 -->
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.esotericsoftware</groupId>
+                <artifactId>kryo</artifactId>
+                <version>${kryo.version}</version>
+            </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>

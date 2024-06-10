@@ -1,12 +1,13 @@
-package com.ssh.network.serialize;
+package com.ssh.network.serialize.imp;
 
 import com.ssh.network.message.Message;
+import com.ssh.network.serialize.Serializer;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
 
 @Slf4j
-public class JdkSerializer implements Serializer{
+public class JdkSerializer implements Serializer {
     @Override
     public byte[] serialize(Object object) {
         try {
@@ -21,7 +22,7 @@ public class JdkSerializer implements Serializer{
     }
 
     @Override
-    public <T> T deserialize(byte[] bytes, Class<?> T) {
+    public <T> T deserialize(byte[] bytes, Class<T> clazz) {
         try {
             ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bytes));
             return (T) ois.readObject();
