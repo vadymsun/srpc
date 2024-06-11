@@ -7,6 +7,7 @@ public enum ResponseState {
 
 
     SUCCESS(200,"Success"),
+    RESTRICTED(600, "Server is busy!"),
     FAILED(500, "Failed");
 
     private ResponseState(Integer state,String msg){

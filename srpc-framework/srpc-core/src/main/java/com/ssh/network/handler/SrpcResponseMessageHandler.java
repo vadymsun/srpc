@@ -20,8 +20,10 @@ public class SrpcResponseMessageHandler extends SimpleChannelInboundHandler<Srpc
         // 根据响应的结果设置 completableFuture
         if(srpcResponseMessage.getState().equals(ResponseState.SUCCESS.getState())){
             completableFuture.complete(srpcResponseMessage.getReturnValue());
-        }else {
+        }else if(srpcResponseMessage.getState().equals(ResponseState.FAILED.getState())) {
             completableFuture.completeExceptionally((Throwable) srpcResponseMessage.getReturnValue());
+        } else if (srpcResponseMessage.getState().equals(ResponseState.RESTRICTED.getState())) {
+            completableFuture.completeExceptionally(new RuntimeException());
         }
     }
 }

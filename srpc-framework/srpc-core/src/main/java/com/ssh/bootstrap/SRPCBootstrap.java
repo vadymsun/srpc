@@ -8,6 +8,7 @@ import com.ssh.loadbalance.imp.RoundLoadBalancer;
 import com.ssh.network.handler.SrpcRequestMessageHandler;
 import com.ssh.network.protocol.SrpcFrameDecoder;
 import com.ssh.network.protocol.SrpcMessageCodec;
+import com.ssh.protection.Restrictor;
 import com.ssh.proxy.handler.SrpcConsumerInvocationHandler;
 import com.ssh.registry.Registry;
 import com.ssh.registry.RegistryFactory;
@@ -40,7 +41,8 @@ public class SRPCBootstrap {
     // 调用方维护的当前正在等待服务方响应的远程调用
     public static final Map<Long, CompletableFuture<Object>> WAITING_CALLS = new ConcurrentHashMap<>();
 
-
+    // 每个IP的限流器
+    public static final Map<String, Restrictor> RESTRICTOR_MAP = new ConcurrentHashMap<>();
     // 注册中心
     @Getter
     private Registry registry;

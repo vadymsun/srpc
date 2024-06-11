@@ -20,6 +20,8 @@ public class Configuration {
     // 服务名称
     private String appName;
 
+
+
     // 序列化方式
     private int serializerType = SerializerFactory.JSON_SERIALIZER;
 }

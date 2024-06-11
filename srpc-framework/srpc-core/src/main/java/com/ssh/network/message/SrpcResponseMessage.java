@@ -23,6 +23,12 @@ public class SrpcResponseMessage extends Message {
         this.state = responseState.getState();
         this.returnValue = returnValue;
     }
+    public SrpcResponseMessage(ResponseState responseState){
+        super();
+        this.message = responseState.getMsg();
+        this.state = responseState.getState();
+        this.returnValue = new Object();
+    }
 
 
     @Override

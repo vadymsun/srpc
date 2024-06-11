@@ -69,6 +69,7 @@ public class SrpcConsumerInvocationHandler implements InvocationHandler {
                 return completableFuture.get(10, TimeUnit.SECONDS);
             } catch (Exception e) {
                 log.debug("调用{}时发生异常，剩余重试次数{}", method.getName(), tryTimes);
+                log.debug("{}", e.getMessage());
                 if(tryTimes-- <= 0){
                     Thread.sleep(waitTime);
                     break;
