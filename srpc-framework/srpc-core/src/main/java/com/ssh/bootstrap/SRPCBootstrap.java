@@ -12,6 +12,9 @@ import com.ssh.protection.Restrictor;
 import com.ssh.proxy.handler.SrpcConsumerInvocationHandler;
 import com.ssh.registry.Registry;
 import com.ssh.registry.RegistryFactory;
+import com.ssh.shutdown.RequestHolder;
+import com.ssh.shutdown.RequestProcessingCounter;
+import com.ssh.shutdown.ShutDownHooker;
 import com.ssh.util.FileUtil;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -56,6 +59,11 @@ public class SRPCBootstrap {
     @Getter
     private Configuration configuration = new Configuration();
 
+    @Getter
+    private RequestHolder requestHolder;
+
+    @Getter
+    private RequestProcessingCounter requestProcessingCounter;
 
     //============================================== 单例模式 ===========================================================
     private static final SRPCBootstrap srpcBootstrap = new SRPCBootstrap();
@@ -91,6 +99,11 @@ public class SRPCBootstrap {
 
     //============================================== 服务方启动程序 =======================================================
     public void start() {
+        // 设置挡板开启，注册关闭事件
+        requestProcessingCounter = new RequestProcessingCounter();
+        requestHolder = new RequestHolder();
+        Runtime.getRuntime().addShutdownHook(new ShutDownHooker());
+
         // 扫描包，获取包下所有类文件的全限定名
         String packageName = configuration.getScanPath();
         List<String> classNames = FileUtil.getAllClass(packageName);

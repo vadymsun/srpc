@@ -15,6 +15,16 @@ public class SrpcRequestMessageHandler extends SimpleChannelInboundHandler<SrpcR
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, SrpcRequestMessage srpcRequestMessage) throws Exception {
         log.debug("服务方收到调用请求,调用接口{}", srpcRequestMessage.getInterfaceName());
+        // 如果进入待关闭状态，拦截所有新请求, 返回状态码
+        if(SRPCBootstrap.getInstance().getRequestHolder().isClosed()){
+            SrpcResponseMessage responseMessage = new SrpcResponseMessage(ResponseState.SERVER_CLOSING);
+            responseMessage.setRequestId(srpcRequestMessage.getRequestId());
+            log.debug("本机正在关闭。。。 拒绝请求{}", responseMessage);
+            channelHandlerContext.writeAndFlush(responseMessage);
+            return;
+        }
+        SRPCBootstrap.getInstance().getRequestProcessingCounter().increase();
+        log.debug("当前正在处理的请求数量{}",SRPCBootstrap.getInstance().getRequestProcessingCounter().getCount());
 
         // 服务端对每个ip进行限流访问
         String clientHost = channelHandlerContext.channel().remoteAddress().toString();

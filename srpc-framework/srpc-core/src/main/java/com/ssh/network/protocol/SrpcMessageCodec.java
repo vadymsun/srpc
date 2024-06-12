@@ -37,12 +37,18 @@ public class SrpcMessageCodec extends ByteToMessageCodec<Message> {
 
         // 序列化
         byte[] bytes = SerializerFactory.getSerializer(serializerType).serialize(message);
+        if(message.getMessageType() == Message.RPC_RESPONSE_MESSAGE){
+            SRPCBootstrap.getInstance().getRequestProcessingCounter().decrease();
+            log.debug("处理完一个请求，还剩{}个",SRPCBootstrap.getInstance().getRequestProcessingCounter().getCount());
+        }
+
         byteBuf.writeInt(bytes.length);
         byteBuf.writeBytes(bytes);
     }
 
     @Override
     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
+
 
         byte[] magicNum = new byte[4];
         byteBuf.readBytes(magicNum);

@@ -7,6 +7,7 @@ public enum ResponseState {
 
 
     SUCCESS(200,"Success"),
+    SERVER_CLOSING(300, "server is closing, try another server!"),
     RESTRICTED(600, "Server is busy!"),
     FAILED(500, "Failed");
 
